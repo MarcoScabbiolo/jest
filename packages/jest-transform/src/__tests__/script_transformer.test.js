@@ -407,6 +407,7 @@ describe('ScriptTransformer', () => {
     expect(writeFileAtomic.sync).toBeCalledTimes(2);
     expect(writeFileAtomic.sync).toBeCalledWith(result.sourceMapPath, mapStr, {
       encoding: 'utf8',
+      fsync: false,
     });
   });
 
@@ -438,7 +439,7 @@ describe('ScriptTransformer', () => {
     expect(writeFileAtomic.sync).toBeCalledWith(
       result.sourceMapPath,
       sourceMap,
-      {encoding: 'utf8'},
+      {encoding: 'utf8', fsync: false},
     );
   });
 
@@ -507,6 +508,7 @@ describe('ScriptTransformer', () => {
       JSON.stringify(map),
       {
         encoding: 'utf8',
+        fsync: false,
       },
     );
   });
@@ -572,9 +574,7 @@ describe('ScriptTransformer', () => {
     expect(writeFileAtomic.sync).toBeCalledWith(
       result.sourceMapPath,
       JSON.stringify(instrumentedCodeMap),
-      {
-        encoding: 'utf8',
-      },
+      expect.anything(),
     );
 
     // Inline source map allows debugging of original source when running instrumented code
@@ -612,9 +612,7 @@ describe('ScriptTransformer', () => {
     expect(writeFileAtomic.sync).toBeCalledWith(
       result.sourceMapPath,
       JSON.stringify(instrumentedCodeMap),
-      {
-        encoding: 'utf8',
-      },
+      expect.anything(),
     );
 
     // Inline source map allows debugging of original source when running instrumented code

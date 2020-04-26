@@ -10,7 +10,7 @@ import type {Config, Global} from '@jest/types';
 import type {AssertionResult, TestResult} from '@jest/test-result';
 import type {JestEnvironment} from '@jest/environment';
 import type {SnapshotStateType} from 'jest-snapshot';
-import Runtime = require('jest-runtime');
+import type {RuntimeType as Runtime} from 'jest-runtime';
 
 import {getCallsite} from '@jest/source-map';
 import installEach from './each';
@@ -155,7 +155,15 @@ async function jasmine2(
       testPath,
     });
 
-  config.setupFilesAfterEnv.forEach(path => runtime.requireModule(path));
+  for (const path of config.setupFilesAfterEnv) {
+    const esm = runtime.unstable_shouldLoadAsEsm(path);
+
+    if (esm) {
+      await runtime.unstable_importModule(path);
+    } else {
+      runtime.requireModule(path);
+    }
+  }
 
   if (globalConfig.enabledTestsMap) {
     env.specFilter = (spec: Spec) => {
@@ -169,7 +177,14 @@ async function jasmine2(
     env.specFilter = (spec: Spec) => testNameRegex.test(spec.getFullName());
   }
 
-  runtime.requireModule(testPath);
+  const esm = runtime.unstable_shouldLoadAsEsm(testPath);
+
+  if (esm) {
+    await runtime.unstable_importModule(testPath);
+  } else {
+    runtime.requireModule(testPath);
+  }
+
   await env.execute();
 
   const results = await reporter.getResults();

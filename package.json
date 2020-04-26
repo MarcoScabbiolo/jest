@@ -32,6 +32,7 @@
     "codecov": "^3.0.0",
     "debug": "^4.0.1",
     "dedent": "^0.7.0",
+    "downlevel-dts": "^0.4.0",
     "eslint": "^6.2.2",
     "eslint-config-prettier": "^6.1.0",
     "eslint-plugin-babel": "^5.1.0",
@@ -47,6 +48,7 @@
     "fast-check": "^1.13.0",
     "find-process": "^1.4.1",
     "glob": "^7.1.1",
+    "globby": "^10.0.2",
     "graceful-fs": "^4.2.3",
     "isbinaryfile": "^4.0.0",
     "istanbul-lib-coverage": "^3.0.0",
@@ -55,7 +57,7 @@
     "jest-junit": "^10.0.0",
     "jest-silent-reporter": "^0.2.1",
     "jest-snapshot-serializer-raw": "^1.1.0",
-    "jest-watch-typeahead": "^0.4.0",
+    "jest-watch-typeahead": "^0.5.0",
     "jquery": "^3.2.1",
     "karma": "^4.0.1",
     "karma-chrome-launcher": "^3.0.0",
@@ -73,9 +75,12 @@
     "realpath-native": "^2.0.0",
     "resolve": "^1.15.0",
     "rimraf": "^3.0.0",
+    "semver": "^6.3.0",
     "slash": "^3.0.0",
     "string-length": "^3.1.0",
     "strip-ansi": "^6.0.0",
+    "tempy": "~0.3.0",
+    "throat": "^5.0.0",
     "typescript": "^3.8.2",
     "webpack": "^4.28.4",
     "which": "^2.0.1"
@@ -86,14 +91,14 @@
     "build": "node ./scripts/build.js",
     "build:ts": "node ./scripts/buildTs.js",
     "check-copyright-headers": "node ./scripts/checkCopyrightHeaders.js",
-    "clean-all": "rimraf ./node_modules && rimraf ./packages/*/node_modules && yarn clean-e2e && yarn build-clean",
+    "clean-all": "yarn clean-e2e && yarn build-clean && rimraf ./packages/*/node_modules && rimraf ./node_modules",
     "clean-e2e": "node ./scripts/cleanE2e.js",
     "jest": "node ./packages/jest-cli/bin/jest.js",
     "jest-coverage": "yarn jest --coverage",
     "lint": "eslint . --cache --ext js,jsx,ts,tsx,md",
     "lint-es5-build": "eslint --no-eslintrc --no-ignore --env=browser packages/*/build-es5",
-    "lint:prettier": "prettier '**/*.{md,yml,yaml}' --write --ignore-path .gitignore",
-    "lint:prettier:ci": "prettier '**/*.{md,yml,yaml}' --check --ignore-path .gitignore",
+    "lint:prettier": "prettier '**/*.{md,yml,yaml}' 'website/static/**/*.{css,js}' --write --ignore-path .gitignore",
+    "lint:prettier:ci": "prettier '**/*.{md,yml,yaml}' 'website/static/**/*.{css,js}' --check --ignore-path .gitignore",
     "postinstall": "opencollective postinstall && yarn build",
     "install-no-ts-build": "node ./scripts/remove-postinstall && yarn --no-progress --frozen-lockfile && node ./scripts/build",
     "remove-prettier-dep": "node ./scripts/remove-prettier-dep",
@@ -104,6 +109,7 @@
     "test-pretty-format-perf": "node packages/pretty-format/perf/test.js",
     "test-leak": "yarn jest -i --detectLeaks jest-mock jest-diff jest-repl",
     "test": "yarn lint && yarn jest",
+    "verify-old-ts": "node ./scripts/verifyOldTs.js",
     "watch": "yarn build && node ./scripts/watch.js",
     "watch:ts": "yarn build:ts --watch"
   },
@@ -122,22 +128,8 @@
     "arrowParens": "avoid",
     "overrides": [
       {
-        "excludeFiles": [
-          "e2e/__tests__/**/*",
-          "website/versioned_docs/**/*.md"
-        ],
-        "files": [
-          "examples/**/*",
-          "scripts/**/*",
-          "e2e/*/**/*",
-          "website/*.js",
-          "website/*/**/*",
-          "eslintImportResolver.js",
-          "babel.config.js"
-        ],
+        "files": "website/**/*.js",
         "options": {
-          "printWidth": 80,
-          "singleQuote": true,
           "trailingComma": "es5"
         }
       }
