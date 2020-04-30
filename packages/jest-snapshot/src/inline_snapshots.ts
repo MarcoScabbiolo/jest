@@ -15,6 +15,7 @@ import type {CallExpression, Expression, File, Program} from '@babel/types';
 import type {Config} from '@jest/types';
 import type {Frame} from 'jest-message-util';
 import {escapeBacktickString} from './utils';
+import type {SnapshotValue} from './types';
 
 // TODO ignore this mess - with a Babel plugin, these will be MUCH, MUCH nicer for TS
 type BabelTraverse = typeof traverse;
@@ -39,8 +40,9 @@ const {parseSync} = require(require.resolve('@babel/core', {
 } as any)) as typeof import('@babel/core');
 
 export type InlineSnapshot = {
-  snapshot: string;
+  snapshot: SnapshotValue;
   frame: Frame;
+  serialized: boolean;
   node?: Expression;
 };
 

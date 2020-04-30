@@ -16,10 +16,22 @@ export type MatchSnapshotConfig = {
   context: Context;
   hint?: string;
   inlineSnapshot?: string;
+  hasInlineSnapshot: boolean;
   isInline: boolean;
   matcherName: string;
   properties?: object;
   received: any;
+  receivedAnything: boolean;
 };
 
-export type SnapshotData = Record<string, string>;
+export type SnapshotValue =
+  | string
+  | {[key: string]: SnapshotValue}
+  | Array<SnapshotValue>
+  | Function
+  | number
+  | boolean
+  | null
+  | undefined;
+
+export type SnapshotData = Record<string, SnapshotValue>;

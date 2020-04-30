@@ -20,27 +20,31 @@ import {
   testNameToKey,
 } from './utils';
 import {InlineSnapshot, saveInlineSnapshots} from './inline_snapshots';
-import type {SnapshotData} from './types';
+import type {SnapshotData, SnapshotValue} from './types';
 
 export type SnapshotStateOptions = {
   updateSnapshot: Config.SnapshotUpdateState;
   prettierPath: Config.Path;
+  dontSerialize: boolean;
   expand?: boolean;
 };
 
 export type SnapshotMatchOptions = {
   testName: string;
-  received: unknown;
+  received: SnapshotValue;
   key?: string;
+  serialized: boolean;
   inlineSnapshot?: string;
   isInline: boolean;
   error?: Error;
+  hasInlineSnapshot: boolean;
 };
 
 type SnapshotReturnOptions = {
-  actual: string;
+  actual: SnapshotValue;
   count: number;
-  expected?: string;
+  expected: SnapshotValue;
+  hasSnapshot: boolean;
   key: string;
   pass: boolean;
 };
@@ -101,8 +105,8 @@ export default class SnapshotState {
 
   private _addSnapshot(
     key: string,
-    receivedSerialized: string,
-    options: {isInline: boolean; error?: Error},
+    received: SnapshotValue,
+    options: {serialized: boolean; isInline: boolean; error?: Error},
   ): void {
     this._dirty = true;
     if (options.isInline) {
@@ -118,10 +122,11 @@ export default class SnapshotState {
       }
       this._inlineSnapshots.push({
         frame,
-        snapshot: receivedSerialized,
+        serialized: options.serialized,
+        snapshot: received,
       });
     } else {
-      this._snapshotData[key] = receivedSerialized;
+      this._snapshotData[key] = received;
     }
   }
 
@@ -184,7 +189,9 @@ export default class SnapshotState {
     testName,
     received,
     key,
+    serialized,
     inlineSnapshot,
+    hasInlineSnapshot: hasExpected,
     isInline,
     error,
   }: SnapshotMatchOptions): SnapshotReturnOptions {
@@ -202,11 +209,22 @@ export default class SnapshotState {
       this._uncheckedKeys.delete(key);
     }
 
-    const receivedSerialized = addExtraLineBreaks(serialize(received));
+    const value = serialized
+      ? addExtraLineBreaks(serialize(received))
+      : received;
     const expected = isInline ? inlineSnapshot : this._snapshotData[key];
-    const pass = expected === receivedSerialized;
-    const hasSnapshot = expected !== undefined;
+    // TODO: Do the actual checks
+    const pass = expected === value;
+    const hasSnapshot = isInline
+      ? hasExpected
+      : Object.keys(this._snapshotData).includes(key);
     const snapshotIsPersisted = isInline || fs.existsSync(this._snapshotPath);
+    const defaultExpected = serialized
+      ? ''
+      : hasSnapshot
+      ? expected
+      : undefined;
+    const defaultActual = serialized ? '' : hasSnapshot ? received : undefined;
 
     if (pass && !isInline) {
       // Executing a snapshot file as JavaScript and writing the strings back
@@ -215,7 +233,7 @@ export default class SnapshotState {
       // generated formatted string.
       // Note that this is only relevant when a snapshot is added and the dirty
       // flag is set.
-      this._snapshotData[key] = receivedSerialized;
+      this._snapshotData[key] = value;
     }
 
     // These are the conditions on when to write snapshots:
@@ -237,19 +255,28 @@ export default class SnapshotState {
           } else {
             this.added++;
           }
-          this._addSnapshot(key, receivedSerialized, {error, isInline});
+          this._addSnapshot(key, value, {
+            error,
+            isInline,
+            serialized,
+          });
         } else {
           this.matched++;
         }
       } else {
-        this._addSnapshot(key, receivedSerialized, {error, isInline});
+        this._addSnapshot(key, value, {
+          error,
+          isInline,
+          serialized,
+        });
         this.added++;
       }
 
       return {
-        actual: '',
+        actual: defaultActual,
         count,
-        expected: '',
+        expected: defaultExpected,
+        hasSnapshot,
         key,
         pass: true,
       };
@@ -257,21 +284,26 @@ export default class SnapshotState {
       if (!pass) {
         this.unmatched++;
         return {
-          actual: removeExtraLineBreaks(receivedSerialized),
+          actual: serialized
+            ? removeExtraLineBreaks(value as string)
+            : received,
           count,
-          expected:
-            expected !== undefined
-              ? removeExtraLineBreaks(expected)
-              : undefined,
+          expected: hasSnapshot
+            ? serialized
+              ? removeExtraLineBreaks(expected as string)
+              : expected
+            : undefined,
+          hasSnapshot,
           key,
           pass: false,
         };
       } else {
         this.matched++;
         return {
-          actual: '',
+          actual: defaultActual,
           count,
-          expected: '',
+          expected: defaultExpected,
+          hasSnapshot,
           key,
           pass: true,
         };

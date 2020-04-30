@@ -285,6 +285,7 @@ const _toMatchSnapshot = (config: MatchSnapshotConfig) => {
     isInline,
     matcherName,
     properties,
+    hasInlineSnapshot,
   } = config;
   let {received} = config;
 
@@ -363,9 +364,10 @@ const _toMatchSnapshot = (config: MatchSnapshotConfig) => {
 
   const result = snapshotState.match({
     error: context.error,
-    inlineSnapshot,
+    hasInlineSnapshot,
     isInline,
     received,
+    serialized: Boolean(context.serializeSnapshots),
     testName: fullTestName,
   });
   const {actual, count, expected, pass} = result;

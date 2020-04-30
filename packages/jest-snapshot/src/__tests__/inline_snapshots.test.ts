@@ -5,20 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-jest.mock('graceful-fs', () => ({
-  ...jest.genMockFromModule<typeof import('fs')>('fs'),
-  existsSync: jest.fn().mockReturnValue(true),
-  readdirSync: jest.fn().mockReturnValue([]),
-  statSync: jest.fn(filePath => ({
-    isDirectory: () => !filePath.endsWith('.js'),
-  })),
-}));
-jest.mock('prettier');
+// TODO this is annoying
+// (but a general require(require.resolve()) problem)
+jest.mock(require.resolve('prettier'), () => require('../__mocks__/prettier'));
 
+import * as fs from 'fs';
+import {tmpdir} from 'os';
 import * as path from 'path';
-import * as fs from 'graceful-fs';
-import prettier from 'prettier';
-import babelTraverse from '@babel/traverse';
 import {Frame} from 'jest-message-util';
 const prettier = require(require.resolve('prettier'));
 
@@ -33,7 +26,7 @@ beforeEach(() => {
   fs.mkdirSync(dir);
 });
 
-test('saveInlineSnapshots() replaces empty function call with a template literal', () => {
+test.only('saveInlineSnapshots() replaces empty function call with a template literal', () => {
   const filename = path.join(dir, 'my.test.js');
   fs.writeFileSync(filename, `expect(1).toMatchInlineSnapshot();\n`);
 
