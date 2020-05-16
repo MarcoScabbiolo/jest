@@ -38,7 +38,11 @@ import {
   printReceived,
   printSnapshotAndReceived,
 } from './printSnapshot';
-import type {Context, MatchSnapshotConfig} from './types';
+import type {
+  Context,
+  MatchSnapshotConfig,
+  ToThrowMatchSnapshotConfig,
+} from './types';
 import * as utils from './utils';
 
 const DID_NOT_THROW = 'Received function did not throw'; // same as toThrow
@@ -354,7 +358,11 @@ const _toMatchSnapshot = (config: MatchSnapshotConfig) => {
         '\n\n' +
         printSnapshotName(currentTestName, hint, count) +
         '\n\n' +
-        printPropertiesAndReceived(properties, received, snapshotState.expand);
+        printPropertiesAndReceived(
+          properties,
+          received as object,
+          snapshotState.expand,
+        );
 
       return {
         message,
@@ -369,12 +377,21 @@ const _toMatchSnapshot = (config: MatchSnapshotConfig) => {
   const result = snapshotState.match({
     error: context.error,
     hasInlineSnapshot,
+    inlineSnapshot,
     isInline,
     received,
     serialized: Boolean(context.serializeSnapshots),
     testName: fullTestName,
   });
-  const {actual, count, expected, pass} = result;
+
+  const {
+    actual,
+    actualSerialized,
+    count,
+    expected,
+    expectedSerialized,
+    pass,
+  } = result;
 
   if (pass) {
     return {message: () => '', pass: true};
@@ -391,17 +408,17 @@ const _toMatchSnapshot = (config: MatchSnapshotConfig) => {
           `must be explicitly passed to write a new snapshot.\n\n` +
           `This is likely because this test is run in a continuous integration ` +
           `(CI) environment in which snapshots are not written by default.\n\n` +
-          `Received:${actual.includes('\n') ? '\n' : ' '}${bReceivedColor(
-            actual,
-          )}`
+          `Received:${
+            actualSerialized.includes('\n') ? '\n' : ' '
+          }${bReceivedColor(actualSerialized)}`
       : () =>
           matcherHintFromConfig(config, true) +
           '\n\n' +
           printSnapshotName(currentTestName, hint, count) +
           '\n\n' +
           printSnapshotAndReceived(
-            expected,
-            actual,
+            expectedSerialized,
+            actualSerialized,
             received,
             snapshotState.expand,
           );
@@ -432,10 +449,12 @@ const toThrowErrorMatchingSnapshot = function (
   return _toThrowErrorMatchingSnapshot(
     {
       context: this,
+      hasInlineSnapshot: false,
       hint,
       isInline: false,
       matcherName,
       received,
+      receivedAnything: arguments.length > 0,
     },
     fromPromise,
   );
@@ -468,26 +487,30 @@ const toThrowErrorMatchingInlineSnapshot = function (
   return _toThrowErrorMatchingSnapshot(
     {
       context: this,
+      hasInlineSnapshot: arguments.length > 1,
       inlineSnapshot,
       isInline: true,
       matcherName,
       received,
+      receivedAnything: arguments.length > 0,
     },
     fromPromise,
   );
 };
 
 const _toThrowErrorMatchingSnapshot = (
-  config: MatchSnapshotConfig,
+  config: ToThrowMatchSnapshotConfig,
   fromPromise?: boolean,
 ) => {
   const {
     context,
+    hasInlineSnapshot,
     hint,
     inlineSnapshot,
     isInline,
     matcherName,
     received,
+    receivedAnything,
   } = config;
 
   context.dontThrow && context.dontThrow();
@@ -523,7 +546,8 @@ const _toThrowErrorMatchingSnapshot = (
     error = received;
   } else {
     try {
-      received();
+      // Type was asserted before
+      (received as () => void)();
     } catch (e) {
       error = e;
     }
@@ -538,11 +562,13 @@ const _toThrowErrorMatchingSnapshot = (
 
   return _toMatchSnapshot({
     context,
+    hasInlineSnapshot,
     hint,
     inlineSnapshot,
     isInline,
     matcherName,
     received: error.message,
+    receivedAnything,
   });
 };
 

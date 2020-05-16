@@ -24,6 +24,13 @@ export type MatchSnapshotConfig = {
   receivedAnything: boolean;
 };
 
+export type ToThrowMatchSnapshotConfig = Omit<
+  MatchSnapshotConfig,
+  'received'
+> & {
+  received: SnapshotValue | (() => void);
+};
+
 export type SnapshotValue =
   | string
   | symbol

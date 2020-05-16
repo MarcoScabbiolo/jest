@@ -42,8 +42,10 @@ export type SnapshotMatchOptions = {
 
 type SnapshotReturnOptions = {
   actual: SnapshotValue;
+  actualSerialized: string;
   count: number;
   expected: SnapshotValue;
+  expectedSerialized: string;
   hasSnapshot: boolean;
   key: string;
   pass: boolean;
@@ -215,7 +217,7 @@ export default class SnapshotState {
     // Object or array deep
     // Might need a circular reference check here, or a Maximum call stack error would be thrown
     // Circular references should probably be represented in the snpashot using a special value
-    // window.window could be snapshoted with "Circular reference to received on received['window']"
+    // window.window could be snapshoted as "Circular reference to received on received['window']"
     if (received && typeof received === 'object') {
       if (!expected) {
         return false;
@@ -279,7 +281,11 @@ export default class SnapshotState {
     const value = serialized
       ? addExtraLineBreaks(serialize(received))
       : received;
+    const valueSerialized = serialized
+      ? (value as string)
+      : addExtraLineBreaks(serialize(received));
     const expected = isInline ? inlineSnapshot : this._snapshotData[key];
+    const expectedSerialized = addExtraLineBreaks(serialize(expected));
     const pass = serialized
       ? expected === value
       : this.compare(received, expected);
@@ -342,8 +348,10 @@ export default class SnapshotState {
 
       return {
         actual: defaultActual,
+        actualSerialized: '',
         count,
         expected: defaultExpected,
+        expectedSerialized: '',
         hasSnapshot,
         key,
         pass: true,
@@ -355,12 +363,14 @@ export default class SnapshotState {
           actual: serialized
             ? removeExtraLineBreaks(value as string)
             : received,
+          actualSerialized: removeExtraLineBreaks(valueSerialized),
           count,
           expected: hasSnapshot
             ? serialized
               ? removeExtraLineBreaks(expected as string)
               : expected
             : undefined,
+          expectedSerialized,
           hasSnapshot,
           key,
           pass: false,
@@ -369,8 +379,10 @@ export default class SnapshotState {
         this.matched++;
         return {
           actual: defaultActual,
+          actualSerialized: '',
           count,
           expected: defaultExpected,
+          expectedSerialized: '',
           hasSnapshot,
           key,
           pass: true,
