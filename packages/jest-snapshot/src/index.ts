@@ -204,11 +204,13 @@ const toMatchSnapshot = function (
 
   return _toMatchSnapshot({
     context: this,
+    hasInlineSnapshot: false,
     hint,
     isInline: false,
     matcherName,
     properties,
     received,
+    receivedAnything: arguments.length === 0,
   });
 };
 
@@ -266,6 +268,7 @@ const toMatchInlineSnapshot = function (
 
   return _toMatchSnapshot({
     context: this,
+    hasInlineSnapshot: arguments.length > 1,
     inlineSnapshot:
       inlineSnapshot !== undefined
         ? stripAddedIndentation(inlineSnapshot)
@@ -274,6 +277,7 @@ const toMatchInlineSnapshot = function (
     matcherName,
     properties,
     received,
+    receivedAnything: arguments.length > 0,
   });
 };
 

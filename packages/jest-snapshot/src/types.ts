@@ -20,12 +20,13 @@ export type MatchSnapshotConfig = {
   isInline: boolean;
   matcherName: string;
   properties?: object;
-  received: any;
+  received: SnapshotValue;
   receivedAnything: boolean;
 };
 
 export type SnapshotValue =
   | string
+  | symbol
   | {[key: string]: SnapshotValue}
   | Array<SnapshotValue>
   | Function

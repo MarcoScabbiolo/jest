@@ -185,6 +185,73 @@ export default class SnapshotState {
     }
   }
 
+  compare(received: SnapshotValue, expected: SnapshotValue): boolean {
+    if (typeof received !== typeof expected) {
+      return false;
+    }
+
+    // Functions cannot be serialized and comparison by reference in a snapshot would
+    // require extremly complex and expensive AST traversal
+    // and would also be not feasible to implement with regular non-inline snapshots.
+    // The only viable check to do is to expect any function
+    if (typeof received === 'function') {
+      return true;
+    }
+
+    // NaN
+    if (
+      typeof received === 'number' &&
+      Number.isNaN(received) &&
+      Number.isNaN(expected)
+    ) {
+      return true;
+    }
+
+    // Symbols are checked by key checking by reference is not feasible
+    if (typeof received === 'symbol') {
+      return received.toString() === (expected as symbol).toString();
+    }
+
+    // Object or array deep
+    // Might need a circular reference check here, or a Maximum call stack error would be thrown
+    // Circular references should probably be represented in the snpashot using a special value
+    // window.window could be snapshoted with "Circular reference to received on received['window']"
+    if (received && typeof received === 'object') {
+      if (!expected) {
+        return false;
+      }
+
+      let receivedKeyCount = 0;
+
+      // for .. in interates over all enumerable property keys, including inherited ones
+      for (const key in received) {
+        receivedKeyCount++;
+        if (
+          !this.compare(
+            (received as {[key: string]: SnapshotValue})?.[key as string],
+            (expected as {[key: string]: SnapshotValue})?.[key as string],
+          )
+        ) {
+          return false;
+        }
+      }
+
+      let expectedKeyCount = 0;
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      for (const _ in expected as object) {
+        expectedKeyCount++;
+      }
+
+      if (receivedKeyCount !== expectedKeyCount) {
+        return false;
+      }
+    }
+
+    // Default to strict equality comparison
+    return received === expected;
+  }
+
   match({
     testName,
     received,
@@ -213,8 +280,9 @@ export default class SnapshotState {
       ? addExtraLineBreaks(serialize(received))
       : received;
     const expected = isInline ? inlineSnapshot : this._snapshotData[key];
-    // TODO: Do the actual checks
-    const pass = expected === value;
+    const pass = serialized
+      ? expected === value
+      : this.compare(received, expected);
     const hasSnapshot = isInline
       ? hasExpected
       : Object.keys(this._snapshotData).includes(key);
