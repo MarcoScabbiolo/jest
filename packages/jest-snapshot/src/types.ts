@@ -31,15 +31,6 @@ export type ToThrowMatchSnapshotConfig = Omit<
   received: SnapshotValue | (() => void);
 };
 
-export type SnapshotValue =
-  | string
-  | symbol
-  | {[key: string]: SnapshotValue}
-  | Array<SnapshotValue>
-  | Function
-  | number
-  | boolean
-  | null
-  | undefined;
+export type SnapshotValue = any;
 
 export type SnapshotData = Record<string, SnapshotValue>;

@@ -25,7 +25,6 @@ import type {SnapshotData, SnapshotValue} from './types';
 export type SnapshotStateOptions = {
   updateSnapshot: Config.SnapshotUpdateState;
   prettierPath: Config.Path;
-  dontSerialize: boolean;
   expand?: boolean;
 };
 
@@ -226,6 +225,7 @@ export default class SnapshotState {
       let receivedKeyCount = 0;
 
       // for .. in interates over all enumerable property keys, including inherited ones
+      // Symbol properties are not supported right now
       for (const key in received) {
         receivedKeyCount++;
         if (

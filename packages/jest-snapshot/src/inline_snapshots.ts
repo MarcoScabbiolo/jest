@@ -14,8 +14,8 @@ import type {CallExpression, Expression, File, Program} from '@babel/types';
 
 import type {Config} from '@jest/types';
 import type {Frame} from 'jest-message-util';
-import {escapeBacktickString} from './utils';
 import type {SnapshotValue} from './types';
+import {generateSnapshot} from './ast';
 
 // TODO ignore this mess - with a Babel plugin, these will be MUCH, MUCH nicer for TS
 type BabelTraverse = typeof traverse;
@@ -226,18 +226,15 @@ const traverseAst = (
 
       snapshotMatcherNames.push(callee.property.name);
 
-      const snapshotIndex = args.findIndex(
-        ({type}) => type === 'TemplateLiteral',
-      );
+      const snapshotIndex = args.length - 1;
       const values = snapshotsForFrame.map(inlineSnapshot => {
         inlineSnapshot.node = node;
         const {snapshot} = inlineSnapshot;
         remainingSnapshots.delete(snapshot);
 
-        return templateLiteral(
-          [templateElement({raw: escapeBacktickString(snapshot)})],
-          [],
-        );
+        return generateSnapshot(snapshot, {
+          serialized: inlineSnapshot.serialized,
+        });
       });
       const replacementNode = values[0];
 
